@@ -53,14 +53,97 @@ def Y(length):
 def draw_house(placement=None, make_walls=True, **kwargs):
     # import importlib; import freecad_utils; importlib.reload(freecad_utils) ; freecad_utils.draw_house()
 
-    outer_segments = draw_outer_walls(placement, **kwargs)
-    inner_segments = draw_internal_walls(outer_segments, placement, **kwargs)
+    # outer_segments = draw_outer_walls(placement, **kwargs)
+    outer_segments = draw_outer_walls_raphela(placement, **kwargs)
+    # inner_segments = draw_internal_walls(outer_segments, placement, **kwargs)
+    inner_segments = draw_inner_walls_raphela(outer_segments, placement, **kwargs)
 
     if make_walls:
         outer_segments.make_wall()
         for s in inner_segments:
             s.make_wall()
     FreeCAD.ActiveDocument.recompute()
+
+
+def draw_outer_walls_raphela(placement=None, **kwargs):
+    if placement is None:
+        placement = Placement()
+
+    if "face" not in kwargs:
+        kwargs["face"] = False
+
+    s = Segments(placement.Base)
+    relative_coordinates = [
+        Y(1550),
+        X(2650),
+        (Y(4200), "diningroom/livingroom"),
+        Y(4210),
+        X(-5410),
+        (X(-1400), "children/hallway"),
+        Y(3950),
+        (X(-3200), "children/parents"),
+        X(-4000),
+        Y(-3950),
+        X(2900),
+        # total length of eastern wall should be 8900 mm
+        (Y(-1150), "balcony/parent-bath"),
+        (Y(-1030), "bathroom/bathroom"),
+        (Y(-2570), "bath/work"),
+        Y(-4200),
+        X(3650),
+        Y(-580),  # before shifting this down by a bit, just to close the wire
+        # Y(-660),  # after shifting this down by a bit, just to close the wire
+        (X(3350), "kitchen/hall"),
+        # Y(-460),  # before shifting this down by a bit, just to close the wire
+        Y(-430),  # after shifting this down by a bit, just to close the wire
+        # X(1500),  # before shifting this left a bit, just to close the wire
+        X(1460),  # after shifting this left a bit, just to close the wire
+    ]
+
+    s.add_segments(relative_coordinates)
+    s.make_wire(**kwargs)
+
+    return s
+
+
+def draw_inner_walls_raphela(outer_walls, placement=None, **kwargs):
+    if placement is None:
+        placement = Placement()
+
+    if "face" not in kwargs:
+        kwargs["face"] = False
+
+    # bathrooms
+    bathrooms = Segments(outer_walls.named_points["balcony/parent-bath"])
+    bathrooms.add_segments(
+        [
+            (X(2230), "bathroom/suite-door"),
+            (X(1550), "bathroom/service-cabinet"),
+            Y(-2000),
+            (X(-1550), "bathroom/bathroom-door"),
+            Y(-1600),
+            X(-2230),
+        ]
+    )
+
+    bathrooms.make_wire(**kwargs)
+
+    bathrooms_inner = Segments(outer_walls.named_points["bathroom/bathroom"])
+    # need to make an L shape between two known points
+    midpoint = Vector(
+        bathrooms.named_points["bathroom/bathroom-door"].x,
+        outer_walls.named_points["bathroom/bathroom"].y,
+        0,
+    )
+
+    bathrooms_inner.points.append(midpoint)
+    print("appended ", midpoint)
+    print("appended ", bathrooms.named_points["bathroom/bathroom-door"])
+    bathrooms_inner.points.append(bathrooms.named_points["bathroom/bathroom-door"])
+    bathrooms_inner.make_wire()
+
+    FreeCAD.ActiveDocument.recompute()
+    return (bathrooms, bathrooms_inner)
 
 
 def draw_outer_walls(placement=None, **kwargs):
