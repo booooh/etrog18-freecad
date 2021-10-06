@@ -90,9 +90,8 @@ def draw_outer_walls_raphela(placement=None, **kwargs):
         (Y(-1030), "bathroom/bathroom"),
         (Y(-2570), "bath/work"),
         Y(-4200),
-        X(3650),
-        Y(-580),  # before shifting this down by a bit, just to close the wire
-        # Y(-660),  # after shifting this down by a bit, just to close the wire
+        (X(3650), "study/kitchen"),
+        Y(-580),
         (X(3350), "kitchen/hall"),
         # Y(-460),  # before shifting this down by a bit, just to close the wire
         Y(-430),  # after shifting this down by a bit, just to close the wire
@@ -142,8 +141,48 @@ def draw_inner_walls_raphela(outer_walls, placement=None, **kwargs):
     bathrooms_inner.points.append(bathrooms.named_points["bathroom/bathroom-door"])
     bathrooms_inner.make_wire()
 
+    study_wall = Segments(outer_walls.named_points["study/kitchen"])
+
+    study_wall.add_segment(Y(4650))
+    study_wall.add_segment(X(750))
+    study_wall.make_wire()
+
+    hall_wall = Segments(outer_walls.named_points["kitchen/hall"])
+    hall_wall.add_segment(Y(1150))
+    hall_wall.add_segment(X(400))
+    hall_wall.make_wire()
+
+    # fridge area start 1250 mm to the right, 700 mm below
+    fridge = Segments(study_wall.points[-1] + Vector(1250, -700, 0))
+    fridge.add_segment(Y(900))
+    fridge.add_segment(X(1290))
+    fridge.add_segment(Y(-900))
+    fridge.make_wire()
+
+    tv_wall = Segments(fridge.points[1] + Vector(0, 1250, 0))
+    tv_wall.add_segment(Y(1350))
+    tv_wall.make_wire()
+
+    bedrooms = Segments(outer_walls.named_points["children/hallway"])
+    bedrooms.add_segment((X(-3200), "bedroom/bedroom"))
+    bedrooms.add_segment(Y(3950))
+    bedrooms.make_wire()
+
+    bedroom_door = Segments(bedrooms.named_points["bedroom/bedroom"])
+    bedroom_door.add_segment(X(-1100))
+    bedroom_door.make_wire()
+
     FreeCAD.ActiveDocument.recompute()
-    return (bathrooms, bathrooms_inner)
+    return (
+        bathrooms,
+        bathrooms_inner,
+        study_wall,
+        hall_wall,
+        fridge,
+        tv_wall,
+        bedrooms,
+        bedroom_door,
+    )
 
 
 def draw_outer_walls(placement=None, **kwargs):
